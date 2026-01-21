@@ -86,3 +86,20 @@ CREATE TABLE IF NOT EXISTS public.pubsub(
     CONSTRAINT fk_game_pubsub FOREIGN KEY(game_id) REFERENCES public.game(id) 
     ON DELETE CASCADE ON UPDATE CASCADE
 )
+
+
+-- pub sub notification trigger 
+
+
+CREATE OR REPLACE FUNCTION pubsub_insert_notify()
+    RETURNS trigger AS
+$BODY$
+    BEGIN
+        PERFORM pg_notify('pubsub_insert', row_to_json(NEW)::text);
+        RETURN NULL;
+    END;
+$BODY$
+    LANGUAGE plpgsql VOLATILE
+    COST 100;
+
+CREATE TRIGGER "pubsub_insert_trigger" AFTER INSERT ON public.pubsub FOR EACH ROW EXECUTE FUNCTION pubsub_insert_notify();
