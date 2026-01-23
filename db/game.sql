@@ -12,30 +12,32 @@ SET row_security = off;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
 
-CREATE user quiz_user WITH ENCRYPTED PASSWORD 'quiz_password';
-GRANT all PRIVILEGES ON DATABASE quizzDB TO quiz_user;
+-- Grant permissions
+GRANT USAGE ON SCHEMA public TO quiz_user;
+GRANT CREATE ON SCHEMA public TO quiz_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO quiz_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO quiz_user;
 
 -- Table structure for table "questions"
 CREATE TABLE IF NOT EXISTS public.questions(
-    id smallint NOT NULL PRIMIMARY KEY,
-    text character varying(1000) NOT NULL,
-
-)
+    id smallint NOT NULL PRIMARY KEY,
+    text character varying(1000) NOT NULL
+);
 
 ALTER TABLE public.questions OWNER TO quiz_user;
 
 -- Table structure for table "answers"
 CREATE TABLE IF NOT EXISTS public.answers(
-    id smallint NOT NULL PRIMIMARY KEY,
+    id smallint NOT NULL PRIMARY KEY,
     text character varying(500) NOT NULL,
     is_correct boolean NOT NULL,
     question_id smallint NOT NULL,
     CONSTRAINT fk_question FOREIGN KEY(question_id) REFERENCES public.questions(id) 
     ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
 
-CREATE INDEX idx_question_id ON public.answers USING btree (question_id);
+CREATE INDEX IF NOT EXISTS idx_question_id ON public.answers USING btree (question_id);
 
 ALTER TABLE public.answers OWNER TO quiz_user;
 
@@ -55,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.game (
   time_started timestamp NULL DEFAULT NULL
 );
 
-CREATE INDEX idx_game_time_created ON public.game USING btree (time_created);
+CREATE INDEX IF NOT EXISTS idx_game_time_created ON public.game USING btree (time_created);
 
 ALTER TABLE public.game OWNER TO quiz_user;
 
@@ -69,9 +71,9 @@ CREATE TABLE IF NOT EXISTS public.game_player(
     queued timestamp NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_game FOREIGN KEY(game_id) REFERENCES public.game(id) 
     ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
-CREATE INDEX player_game_id_idx ON public.game_player USING btree (game_id);
+CREATE INDEX IF NOT EXISTS player_game_id_idx ON public.game_player USING btree (game_id);
 
 ALTER TABLE public.game_player OWNER TO quiz_user;
 
@@ -85,21 +87,4 @@ CREATE TABLE IF NOT EXISTS public.pubsub(
     queued timestamp NOT NULL DEFAULT NOW(),    
     CONSTRAINT fk_game_pubsub FOREIGN KEY(game_id) REFERENCES public.game(id) 
     ON DELETE CASCADE ON UPDATE CASCADE
-)
-
-
--- pub sub notification trigger 
-
-
-CREATE OR REPLACE FUNCTION pubsub_insert_notify()
-    RETURNS trigger AS
-$BODY$
-    BEGIN
-        PERFORM pg_notify('pubsub_insert', row_to_json(NEW)::text);
-        RETURN NULL;
-    END;
-$BODY$
-    LANGUAGE plpgsql VOLATILE
-    COST 100;
-
-CREATE TRIGGER "pubsub_insert_trigger" AFTER INSERT ON public.pubsub FOR EACH ROW EXECUTE FUNCTION pubsub_insert_notify();
+);
