@@ -60,10 +60,13 @@ export async function questionsImport() {
 
       });
 
-    // add to database in sequence
-    for (let q of questions) {
-      imported += (await questionAdd(q.question, q.answer) ? 1 : 0);
-    }
+      // add to database in sequence
+      for (let q of questions) {
+        if (await questionAdd(q.question, q.answer)) {
+          imported++;
+        }
+      }
+
 
  
     return imported;
@@ -72,7 +75,7 @@ export async function questionsImport() {
     console.error('Error importing questions:', err.message);
     return 0;
   } finally {
-    await pool.end();
+    // Don't close pool - it's shared across the app
   }
 
 }
@@ -101,5 +104,4 @@ function cleanString(str) {
 
 }
 
-// Run the import
-questionsImport();
+// Export for use in routes (don't auto-run)
