@@ -10,6 +10,16 @@ dotenv.config()
 
 
 
+
+const cfg={
+  dev:((process.env.NODE_ENV).trim().toLowerCase()!=='production'),
+  port:process.env.PORT,
+  domain:process.env.QUIZ_WEB_DOMAIN,
+  wsDomain:process.env.QUIZ_WS_DOMAIN,
+  title:process.env.QUIZ_TITLE,
+  questionsMax:parseInt(process.env.QUIZ_QUESTIONS_MAX,10)
+}
+
 const app = express();
 const PORT = 3000;
 
@@ -34,16 +44,17 @@ app.get('/', async (req, res) => {
 
     // Get current question count from database
     const questions = await questionCount();
-    const questionsMax = parseInt(process.env.QUIZ_QUESTIONS_MAX, 10) || 50;
+    const questionsMax = cfg.questionsMax
+    const title = cfg.questionsMax
 
     res.render('home', {
-      title: 'Multiplayer Quiz',
+      title,
       questions,
       questionsMax,
       imported
     });
   } catch (err) {
-    console.error('Home page error:', err);
+
     res.status(500).render('error', { title: 'Error', error: err.message });
   }
 });

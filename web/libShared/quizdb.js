@@ -14,6 +14,7 @@ export async function questionCount(){
     }
 }
 
+
 export async function questionAdd(question, answers) {
   const client = await pool.connect();
   
@@ -50,4 +51,40 @@ export async function questionAdd(question, answers) {
   } finally {
     client.release();
   }
+}
+
+
+//game start
+
+export const gameCreate = async (data)=>{
+  const client =  await pool.connect()
+   const qCount = await questionCount();
+
+   try{
+    const result = await client.query(`INSERT INTO public.game(question_offset,questions_asked,timeout_answered,score_correct,score_fastest,score_incorrect,score_noanswer) VALUES($1,$2,$3,$4,$5,$6,$7)
+  RETURNING id`,
+  [
+    Math.random() * qCount,
+    clamp(1,data.question_asked, 10),
+    clamp(5, data.timeout_answered, 60),
+    clamp(-100, data.score_correct, 100),
+    clamp(-100, data.score_fastest, 100),
+    clamp(-100, data.score_incorrect, 100),
+    clamp(-100, data.score_noanswer, 100)
+  ])
+
+  return result.rows[0].id;
+
+   }catch(err){
+    console.error('Error creating game:', err.message);
+    return null;
+   }finally{
+    client.release();
+   }
+}
+
+
+
+export function clamp(min=0, value=0, max=0){
+return Math.max(min,  Math.min(parseInt(value || '0', 10) || 0, max))
 }

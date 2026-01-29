@@ -19,7 +19,6 @@ export async function questionsImport() {
     // Get current question count
     const qCount = await questionCount();
  
-
     // fetch questions from API
     const questions = (await Promise.allSettled(
 

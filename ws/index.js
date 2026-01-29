@@ -1,6 +1,6 @@
 // modules
 import * as player from './player.js';
-import * as question from './question.js';
+import * as question from './questions.js';
 import { startTimer, stopTimer } from './timer.js';
 
 // DOM elements
