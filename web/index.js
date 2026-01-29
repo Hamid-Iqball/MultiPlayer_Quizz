@@ -6,13 +6,13 @@ import { questionCount } from './libShared/quizdb.js';
 
 
 
-dotenv.config()
+dotenv.config({ path: '../.env' })
 
 
 
 
 const cfg={
-  dev:((process.env.NODE_ENV).trim().toLowerCase()!=='production'),
+  dev:((process.env.NODE_ENV || 'development').toLowerCase()!=='production'),
   port:process.env.PORT,
   domain:process.env.QUIZ_WEB_DOMAIN,
   wsDomain:process.env.QUIZ_WS_DOMAIN,
