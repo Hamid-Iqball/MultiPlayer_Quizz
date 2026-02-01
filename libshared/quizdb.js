@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '../web/db.js';
 
 
 export async function questionCount(){
@@ -55,7 +55,6 @@ export async function questionAdd(question, answers) {
 
 
 //game create
-
 export const gameCreate = async (data)=>{
   const client =  await pool.connect()
    const qCount = await questionCount();
@@ -85,16 +84,16 @@ export const gameCreate = async (data)=>{
 
 //game start 
 export async function gameStart(id){
-const client  = await pool.connect();
-try{
-await client.query('UPDATE public.game SET time_started=NOW() WHERE id=$1', [id]);
-return id;
-}catch(err){
-  console.error('Error starting game:', err.message);
-  return null;
-}finally{
-  client.release();
-}
+  const client  = await pool.connect();
+  try{
+    await client.query('UPDATE public.game SET time_started=NOW() WHERE id=$1', [id]);
+    return id;
+  }catch(err){
+    console.error('Error starting game:', err.message);
+    return null;
+  }finally{
+    client.release();
+  }
 }
 
 
@@ -121,8 +120,8 @@ export async function gameRemove(id){
 
 //game player add
 export async function gamePlayerAdd(id){
- const client= await pool.client()
- 
+ const client= await pool.connect()
+
  try {
   await client.query('INSERT INTO public.game_player(game_id, type, data) VALUES($1,$2,$3) RETURNING id', [id, 'player', {}])
   return id;
@@ -164,7 +163,7 @@ return result;
  } catch (error) {
    console.error('ERROR fetching player :', error.message)
  }finally{
-  pool.realse()
+  client.release()
  }
 
 }
@@ -181,12 +180,12 @@ try {
   const question = await client.query('SELECT * FROM public.questions WHERE id=$1' , [qNumber % qCount])
 
 
-  if(question !==1) return null;
+  if(!question.rows.length) return null;
 
 
   const answers =  await client.query("SELECT * FROM public.answers WHERE question_id=$1" , [question.rows[0].id])
 
-  if(!answers.length) return null
+  if(!answers.rows.length) return null
 
 
   return {

@@ -1,5 +1,5 @@
 ;
-import { questionCount, questionAdd } from '../libShared/quizdb.js';
+import { questionCount, questionAdd } from '../../libshared/quizdb.js';
 import pool from '../db.js';
 
 // configuration

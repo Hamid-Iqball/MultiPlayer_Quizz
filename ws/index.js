@@ -1,138 +1,65 @@
-// modules
-import * as player from './player.js';
-import * as question from './questions.js';
-import { startTimer, stopTimer } from './timer.js';
-
-// DOM elements
-const dom = {
-  body: document.body,
-  start: document.getElementById('start')
-};
-
-// game state
-const state = {
-  current: 'join'
-};
-
-dom.body.className = state.current;
-
-// handle WebSocket communication
-const ws = new WebSocket( window.cfg.wsDomain );
+import dotenv from "dotenv";
+import { WebSocketServer } from "ws";
+dotenv.config({ path: "../.env" });
 
 
-// connect to server and send game ID and initial player name
-ws.addEventListener('open', () => {
-  sendMessage( 'gameInit', { gameId: window.cfg.gameId, playerName: window.cfg.playerName } );
-});
-
-
-// send message
-function sendMessage(type, data = null) {
-  ws.send( `${ type }:${ JSON.stringify( data ) }` );
+const cfg ={
+  wsPort: process.env.WS_PORT || 8001
 }
 
-// receive message
-ws.addEventListener('message', e => {
 
-  const { type, data } = parseMessage( e.data );
-  if (!type || !data) return;
+const wss = new WebSocketServer({port:cfg.wsPort , perMessageDeflate:false})
 
-  console.log('Data from server:', type, data);
 
-  switch (type) {
+wss.on('connection' , function(socket , req){
 
-    case 'player':
-      player.init( data );
-      break;
+  let player = null;
 
-    case 'playerAdd':
-      player.add( data );
-      break;
+  socket.on('message' , async function(msg){
+   const {type,data} =  parseMessage(msg)
+  })
 
-    case 'playerRemove':
-      player.remove( data );
-      break;
 
-    case 'start':
-      state.current = type;
-      player.start( data.playerId );
-      break;
-
-    case 'questionactive':
-      state.current = type;
-      question.show( data );
-      break;
-
-    case 'questiontimeout':
-      startTimer( data.timeout );
-      break;
-
-    case 'questioncomplete':
-      question.correctAnswer( data.correct );
-      break;
-
-    case 'scoreboard':
-      state.current = type;
-      player.score( data );
-      startTimer();
-      break;
-
-    case 'gameover':
-      state.current = type;
-      stopTimer();
-      break;
-
+  if(!player && msg.type === "gameInit" && msg.data){
+    
   }
 
-  // show page elements based on current state
-  dom.body.className = state.current;
-
-});
+})
 
 
-// close connection
-ws.addEventListener('close', () => {
-  console.log('connection closed');
-});
 
 
-// start game button event
-dom.start.addEventListener('click', e => {
-  if (state.current === 'join') sendMessage('start');
-});
-
-// question answered event
-document.addEventListener('answered', e => {
-  if (state.current === 'questionactive') sendMessage('questionanswered', { answer: e.detail });
-});
 
 
 // parse incoming message in format "type:jsondata"
 // e.g. 'myMessage:{"value",123}' returns { type: "myMessage", data: { "value": 123 }}
-function parseMessage( msg ) {
+function parseMessage(msg){
 
-  msg = msg.toString().trim();
+  //convert the message to string to find the index of the colon
+msg = msg.toString().trim()
 
-  let
-    s = msg.indexOf(':'),
-    type = null,
-    data = {};
+let
+index = msg.indexOf(':')
+type = null
+data={}
 
-  if (s > 0) {
-    type = msg.slice(0, s);
-    data = msg.slice(s + 1);
+if(index>0){
+  type = msg.slice(0,index)
+  data = msg.slice(index+1);
 
-    try {
-      let json = JSON.parse(data);
-      data = json;
-    }
-    catch(e){}
+try {
 
-  }
-  else {
-    type = msg;
-  }
+  data  =JSON.parse(data)
+  
+} catch (error) {
+  
+}
 
-  return { type, data };
+}else{
+    type = msg
+    data = {}
+}
+
+return {type,data}
 
 }

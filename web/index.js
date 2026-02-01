@@ -2,7 +2,7 @@ import express from 'express';
 import pool from './db.js';
 import dotenv from 'dotenv';
 import { questionsImport } from './lib/questionsImport.js';
-import { questionCount } from './libShared/quizdb.js';
+import { gameCreate, questionCount } from '../libshared/quizdb.js';
 
 
 
@@ -46,7 +46,7 @@ app.get('/', async (req, res) => {
     const questions = await questionCount();
     const questionsMax = cfg.questionsMax
     const title = cfg.questionsMax
-
+ 
     res.render('home', {
       title,
       questions,
@@ -60,10 +60,14 @@ app.get('/', async (req, res) => {
 });
 
 
-app.post('/newgame/', (req, res) => {
+app.post('/newgame/',async (req, res) => {
+
+
+  const data = req.body;
+  const id = await gameCreate(data)
   const name = (req.body && req.body.name) || 'Player';
   const slug = Math.random().toString(36).slice(2, 8).toUpperCase();
-  res.redirect(`/game/${slug}?player=${encodeURIComponent(name)}`);
+  res.redirect(`/game/${id}?player=${encodeURIComponent(name)}`);
 });
 
 
