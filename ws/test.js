@@ -18,7 +18,7 @@ game.start()
 
 
 game.submitAnswer(alice.id,"4")
-game.submitAnswer(bob.id , "4")
+game.submitAnswer(bob.id , "9")
 
 console.log(game.getStates())
 
