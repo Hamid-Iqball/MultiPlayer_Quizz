@@ -14,8 +14,12 @@ const wss = new WebSocketServer({
   perMessageDeflate: false
 });
 
-// create ONE game instance
-const game = new Game();
+// create ONE game instance with hardcoded questions for testing
+const game = new Game([
+  { text: "What is 2 + 2?", answer: "4" },
+  { text: "Capital of France?", answer: "Paris" },
+  { text: "Largest planet?", answer: "Jupiter" }
+]);
 
 console.log(`WebSocket server running on port ${cfg.wsPort}`);
 
@@ -57,7 +61,6 @@ wss.on("connection", (socket, req) => {
       return;
     }
 
-
     if (!player) {
       socket.send(
         JSON.stringify({
@@ -66,6 +69,59 @@ wss.on("connection", (socket, req) => {
         })
       );
     }
+
+
+      if (type === "startGame") {
+        if (!player) {
+          socket.send(JSON.stringify({ type: "error", data: "Join first" }));
+          return;
+        }
+
+        try {
+          game.start(); // start the quiz
+          socket.send(JSON.stringify({ type: "gameState", data: game.getStates() }));
+        } catch (err) {
+          socket.send(JSON.stringify({ type: "error", data: err.message }));
+        }
+      }
+
+
+
+    if(type==="submitAnswer"){
+    if (!player) {
+      socket.send(JSON.stringify({ type: "error", data: "Join first" }));
+      return;
+    }
+
+    const {answer} = data
+
+    if(!answer){
+      socket.send(JSON.stringify({type:"Error", data:"Select answer"}))
+      return;
+    }
+
+
+      game.submitAnswer(player.id , answer)
+      socket.send(JSON.stringify({type:"answerSubmitted", data:game.getStates() }))
+
+      return;
+    }
+
+    // NEXT QUESTION
+    if (type === "nextQuestion") {
+      if (!player) {
+        socket.send(JSON.stringify({ type: "error", data: "Join first" }));
+        return;
+      }
+      try {
+        game.nextQuestion();
+        socket.send(JSON.stringify({ type: "gameState", data: game.getStates() }));
+      } catch (err) {
+        socket.send(JSON.stringify({ type: "error", data: err.message }));
+      }
+      return;
+    }
+
   });
 
   socket.on("close", () => {
@@ -75,6 +131,7 @@ wss.on("connection", (socket, req) => {
       game.removePlayer(player.id);
       console.log(`Player removed: ${player.name}`);
     }
+
   });
 });
 
